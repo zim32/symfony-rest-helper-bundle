@@ -1,0 +1,10 @@
+services:
+
+  Zim\Bundle\SymfonyRestHelperBundle\Command\MakeCrudCommand:
+    arguments: ['@doctrine.orm.default_entity_manager', '@twig', '@parameter_bag']
+    tags: ['console.command']
+
+  Zim\Bundle\SymfonyRestHelperBundle\Component\RequestFilter\RequestFilterService:
+
+  Zim\Bundle\SymfonyRestHelperBundle\Component\RequestFilter\Filter\NumberFilter:
+    tags: ['app.request_filter']
