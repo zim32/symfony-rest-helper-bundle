@@ -1,0 +1,24 @@
+{
+  "name": "zim32/symfony-rest-helper-bundle",
+  "type": "symfony-bundle",
+  "description": "Bundle for symfony rest template project",
+  "keywords": ["Symfony", "bundle", "rest", "api"],
+  "homepage": "https://github.com/zim32/symfony-rest-helper-bundle",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Yurij Uvarov",
+      "email": "yurij.uvarov@gmail.com",
+      "homepage": "https://github.com/zim32"
+    }
+  ],
+  "require": {
+    "php": ">=7.1",
+    "symfony/framework-bundle": "^5.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Zim\\Bundle\\SymfonyRestHelperBundle\\": ""
+    }
+  }
+}
