@@ -101,7 +101,7 @@ class MakeCrudCommand extends BaseConsoleCommand
 
         $crudInfo->setGetItemsOperationResponseDescription(
             $this->askText('GetItems response description',
-                $this->validateNotEmpty('Value required'), $this->generateDescriptionText($crudInfo->getResourcePluralName(), true) . ' list')
+                $this->validateNotEmpty('Value required'), $this->generateDescriptionText($crudInfo->getResourcePluralName()) . ' list')
         );
 
 

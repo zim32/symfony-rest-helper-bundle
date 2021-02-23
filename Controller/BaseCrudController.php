@@ -136,9 +136,7 @@ class BaseCrudController extends AbstractController
 
         $json  = $this->normalize($itemClass, $items, 'List', $additionalGroups, $getItemsSetup->overrideGroup());
 
-        return $this->successResponse([
-            'status' => 'ok',
-            'result' => $json,
+        return $this->successResponse($json, [
             'pager'  => $this->formatPagerData($pager)
         ]);
     }
@@ -466,10 +464,11 @@ class BaseCrudController extends AbstractController
         return $this->denormalizer->denormalize($data, $itemClass, 'json', $context);
     }
 
-    protected function successResponse($data = null)
+    protected function successResponse($result = null, array $additionalData = [])
     {
         $env  = $this->getParameter('kernel.environment');
-        $data = ['status' => 'ok', 'result' => $data];
+        $data = ['status' => 'ok', 'result' => $result];
+        $data = array_merge($data, $additionalData);
 
         $encodeFlags = JSON_UNESCAPED_UNICODE;
 
