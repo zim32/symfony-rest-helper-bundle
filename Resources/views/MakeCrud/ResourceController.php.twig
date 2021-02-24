@@ -76,11 +76,12 @@ class {{ info.resourceSingularName }}Resource extends ApiController
      * )
      *
      * @param string $id
+     * @param Request $request
      * @return JsonResponse
      */
-    public function {{ info.getItemOperationMethodName }}(string $id)
+    public function {{ info.getItemOperationMethodName }}(string $id, Request $request)
     {
-        return $this->handleGetItemOperation($id, {{ info.entityShortName }}::class, new class extends BaseGetItemSetup {
+        return $this->handleGetItemOperation($id, $request, {{ info.entityShortName }}::class, new class extends BaseGetItemSetup {
 
         });
     }

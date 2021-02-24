@@ -143,18 +143,28 @@ class BaseCrudController extends AbstractController
 
     /**
      * @param string $id
+     * @param Request $request
      * @param string $itemClass
      * @param BaseGetItemSetup|null $setup
      * @param array $additionalGroups
      * @return JsonResponse
      */
-    protected function handleGetItemOperation(string $id, string $itemClass, BaseGetItemSetup $setup = null, array $additionalGroups = [])
+    protected function handleGetItemOperation(string $id, Request $request, string $itemClass, BaseGetItemSetup $setup = null, array $additionalGroups = [])
     {
         if (!$setup) {
             $setup = new BaseGetItemSetup();
         }
 
-        $entity = $this->em->find($itemClass, $id);
+        $qb = $this->em->createQueryBuilder();
+
+        $qb->select('m');
+        $qb->from($itemClass, 'm');
+        $qb->andWhere('m.id = :id');
+        $qb->setParameter('id', $id);
+
+        $setup->modifyQueryBuilder($qb, $request);
+
+        $entity = $qb->getQuery()->getSingleResult();
 
         $requiredRole = $setup->requiredRole($entity);
 
