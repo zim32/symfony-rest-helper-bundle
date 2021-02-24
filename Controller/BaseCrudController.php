@@ -2,6 +2,7 @@
 
 namespace Zim\Bundle\SymfonyRestHelperBundle\Controller;
 
+use Doctrine\ORM\NoResultException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 use Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup\BaseDeleteItemSetup;
@@ -164,16 +165,18 @@ class BaseCrudController extends AbstractController
 
         $setup->modifyQueryBuilder($qb, $request);
 
-        $entity = $qb->getQuery()->getSingleResult();
+        try {
+            $entity = $qb->getQuery()->getSingleResult();
+        } catch (NoResultException $e) {
+            throw new NotFoundException();
+        } catch (\Exception $e) {
+            throw $e;
+        }
 
         $requiredRole = $setup->requiredRole($entity);
 
         if ($requiredRole) {
             $this->denyAccessUnlessGranted($requiredRole, $entity);
-        }
-
-        if (!$entity) {
-            throw new NotFoundException();
         }
 
         $json = $this->normalize($itemClass, $entity, 'Show', $additionalGroups, $setup->overrideGroup());
