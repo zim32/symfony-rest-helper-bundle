@@ -8,3 +8,7 @@ services:
 
   Zim\Bundle\SymfonyRestHelperBundle\Component\RequestFilter\Filter\NumberFilter:
     tags: ['app.request_filter']
+
+  Zim\Bundle\SymfonyRestHelperBundle\Serializer\ResourceDenormalizer:
+    arguments: ['@doctrine.orm.default_entity_manager']
+    tags: ['serializer.normalizer']
