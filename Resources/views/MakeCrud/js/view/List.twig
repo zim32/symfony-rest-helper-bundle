@@ -4,7 +4,7 @@
         <v-row>
             <v-col class="col">
                 <v-row>
-                    <v-col cols="3"><v-text-field dense label="Search {{ info.resourceName }}..." v-model="filters.search" append-icon="mdi-magnify" solo></v-text-field></v-col>
+                    <v-col cols="3"><v-text-field dense label="Search {{ info.resourcePluralName }}..." v-model="filters.search" append-icon="mdi-magnify" solo></v-text-field></v-col>
                     <v-col cols="9"><v-btn :to="{ name: '{{ info.frontendAddPageRouteName }}' }">{{ info.frontendListPageAddResourceText }}</v-btn></v-col>
                 </v-row>
             </v-col>
@@ -39,7 +39,6 @@
 
 <script>
 
-    import GetClient from '../../../services/SwaggerClient';
     import VueDataTable from '../../../mixins/VueDataTable';
 
     export default {
@@ -64,9 +63,7 @@
 
         methods: {
             async getItems(options) {
-                let client   = await GetClient();
-                let response = await client.apis['{{ info.resourceTag }}'].{{ info.getItemsOperationMethodName }}(options);
-
+                let response = await this.$api.swagger.apis['{{ info.resourceTag }}'].{{ info.getItemsOperationMethodName }}(options);
                 return response.body;
             }
         },

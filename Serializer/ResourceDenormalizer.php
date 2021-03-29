@@ -10,6 +10,11 @@ use Zim\Bundle\SymfonyRestHelperBundle\Helper\StringHelper;
 
 class ResourceDenormalizer implements DenormalizerInterface
 {
+    const TYPE_SINGLE_ID = 0;
+    const TYPE_ARRAY_OF_IDS = 1;
+    const TYPE_SINGLE_OBJECT = 2;
+    const TYPE_ARRAY_OF_OBJECTS = 3;
+
     /**
      * @var EntityManagerInterface
      */
@@ -25,15 +30,24 @@ class ResourceDenormalizer implements DenormalizerInterface
      */
     public function denormalize($data, string $type, string $format = null, array $context = [])
     {
-        if (is_scalar($data)) {
-            return $this->em->find($type, $data);
-        } else if (is_array($data)) {
-            $fqcn = str_replace('[]', '', $type);
-            $query = $this->em->createQuery('SELECT m FROM '.$fqcn.' m WHERE m.id IN(:ids)');
-            $query->setParameter('ids', $data);
-            return $query->getResult();
-        } else {
-            throw new \Exception('Can not denormalize value. Unsupported value type');
+        $dataType = $this->detectDataType($data, $type);
+
+        if ($dataType === null) {
+            throw new \Exception('Unsupported data type');
+        }
+
+        switch ($dataType) {
+            case self::TYPE_SINGLE_ID:
+                return $this->em->find($type, $data);
+            case self::TYPE_ARRAY_OF_IDS:
+                $fqcn = str_replace('[]', '', $type);
+                $query = $this->em->createQuery('SELECT m FROM '.$fqcn.' m WHERE m.id IN(:ids)');
+                $query->setParameter('ids', $data);
+                return $query->getResult();
+            case self::TYPE_SINGLE_OBJECT:
+                return $this->em->find($type, $data['id']);
+            default:
+                throw new \Exception('Can not denormalize value. Unsupported value type');
         }
     }
 
@@ -42,42 +56,103 @@ class ResourceDenormalizer implements DenormalizerInterface
      */
     public function supportsDenormalization($data, string $type, string $format = null)
     {
-        if (is_scalar($data)) {
-            if (false === class_exists($type)) {
-                return false;
-            }
+        $dataType = $this->detectDataType($data, $type);
 
-            $metadata = $this->em->getClassMetadata($type);
+        return $dataType !== null;
+    }
 
-            if (!$metadata) {
-                return false;
-            }
+    protected function detectDataType($data, $format)
+    {
+        switch (true) {
+            case $this->isSingleIDType($data, $format):
+                return self::TYPE_SINGLE_ID;
+            case $this->isArrayOfIDsType($data, $format):
+                return self::TYPE_ARRAY_OF_IDS;
+            case $this->isSingleObjectType($data, $format):
+                return self::TYPE_SINGLE_OBJECT;
+            case $this->isArrayOfObjectsType($data, $format):
+                return self::TYPE_ARRAY_OF_OBJECTS;
         }
 
-        if (is_array($data)) {
-            if (count($data) === 0) {
-                return false;
-            }
+        return null;
+    }
 
-            if (false === StringHelper::endsWith($type, '[]')) {
-                return false;
-            }
-
-            // check array is real array (not associative)
-            $keys = array_keys($data);
-
-            if ($keys !== range(0, count($data) - 1)) {
-                return false;
-            }
-
-            $fqcn     = str_replace('[]', '', $type);
-            $metadata = $this->em->getClassMetadata($fqcn);
-
-            if (!$metadata) {
-                return false;
-            }
+    protected function isSingleIDType($data, $type)
+    {
+        if (false === is_scalar($data)) {
+            return false;
         }
 
-        return is_scalar($data) || is_array($data);
+        if (false === class_exists($type)) {
+            return false;
+        }
+
+        $metadata = $this->em->getClassMetadata($type);
+
+        if (!$metadata) {
+            return false;
+        }
+
+        return true;
+    }
+
+    protected function isArrayOfIDsType($data, $type)
+    {
+        if (false === is_array($data)) {
+            return false;
+        }
+
+        if (count($data) === 0) {
+            return false;
+        }
+
+        if (false === StringHelper::endsWith($type, '[]')) {
+            return false;
+        }
+
+        // check array is real array (not associative)
+        $keys = array_keys($data);
+
+        if ($keys !== range(0, count($data) - 1)) {
+            return false;
+        }
+
+        // check metadata
+        $fqcn     = str_replace('[]', '', $type);
+        $metadata = $this->em->getClassMetadata($fqcn);
+
+        if (!$metadata) {
+            return false;
+        }
+
+        return true;
+    }
+
+    protected function isSingleObjectType($data, $type)
+    {
+        if (false === is_array($data)) {
+            return false;
+        }
+
+        if (false === array_key_exists('id', $data)) {
+            return false;
+        }
+
+        if (false === is_numeric($data['id'])) {
+            return false;
+        }
+
+        $metadata = $this->em->getClassMetadata($type);
+
+        if (!$metadata) {
+            return false;
+        }
+
+        return true;
+    }
+
+    protected function isArrayOfObjectsType($data, $type)
+    {
+        return false;
     }
 }

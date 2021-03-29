@@ -1,6 +1,6 @@
 <template>
     <div>
-        <Form />
+        <Form ref="form" @submitted="$emit('submitted')" />
     </div>
 </template>
 
@@ -15,6 +15,12 @@
             return {
 
             };
+        },
+
+        methods: {
+            submit() {
+                this.$refs['form'].submit();
+            }
         }
     }
 

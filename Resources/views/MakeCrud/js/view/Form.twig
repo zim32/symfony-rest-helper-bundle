@@ -1,5 +1,6 @@
 <template>
     <Form
+            ref="form"
             :itemID="itemID"
             :prepareSubmitData="prepareSubmitData"
             :formatItem="formatItem"
@@ -8,6 +9,7 @@
             postOperation="{{ info.postItemOperationMethodName }}"
             patchOperation="{{ info.patchItemOperationMethodName }}"
             :createItem="createItem"
+            @submitted="$emit('submitted')"
     >
         <template #form-controls="{ item, errors, isSubmitting, fieldErrors }">
             <v-row>
@@ -64,6 +66,10 @@
                 return {
 
                 };
+            },
+
+            submit() {
+                this.$refs['form'].submit();
             }
         }
 

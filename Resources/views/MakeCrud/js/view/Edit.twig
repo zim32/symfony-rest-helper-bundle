@@ -1,6 +1,6 @@
 <template>
     <div>
-        <Form v-if="itemID" :itemID="itemID" />
+        <Form ref="form" @submitted="$emit('submitted')" />
     </div>
 </template>
 
@@ -19,6 +19,12 @@
 
         mounted() {
             this.itemID = this.$route.params['id'];
+        },
+
+        methods: {
+            submit() {
+                this.$refs['form'].submit();
+            }
         }
     }
 

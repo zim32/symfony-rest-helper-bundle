@@ -41,6 +41,7 @@ class MakeCrudCommand extends BaseConsoleCommand
     {
         $this
             ->setName('app:make:crud')
+            ->addOption('resource', null, InputOption::VALUE_NONE, 'Generate resource')
             ->addOption('entity', null, InputOption::VALUE_NONE, 'Generate entity')
             ->addOption('form', null, InputOption::VALUE_NONE, 'Generate symfony form')
             ->addOption('vue', null, InputOption::VALUE_NONE, 'Generate VueJS frontend files')
@@ -197,7 +198,9 @@ class MakeCrudCommand extends BaseConsoleCommand
 
     protected function generate(MakeCrudInfo $crudInfo)
     {
-        $this->generateResourceController($crudInfo);
+        if ($this->input->getOption('resource')) {
+            $this->generateResourceController($crudInfo);
+        }
 
         if ($this->input->getOption('entity')) {
             $this->generateEntity($crudInfo);
