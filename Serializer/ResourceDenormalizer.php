@@ -5,11 +5,7 @@ namespace Zim\Bundle\SymfonyRestHelperBundle\Serializer;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
-use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
-use Symfony\Component\Serializer\SerializerAwareInterface;
-use Symfony\Component\Serializer\SerializerAwareTrait;
-use Symfony\Component\Serializer\SerializerInterface;
 use Zim\Bundle\SymfonyRestHelperBundle\Helper\StringHelper;
 
 class ResourceDenormalizer implements DenormalizerInterface
