@@ -289,7 +289,6 @@ class BaseCrudController extends AbstractController
 
             $setup->beforeFlush($entity, $request);
 
-            $this->em->persist($entity);
             $this->em->flush();
 
             $setup->afterFlush($entity, $request);

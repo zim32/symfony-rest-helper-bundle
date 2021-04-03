@@ -280,7 +280,7 @@ class MakeCrudCommand extends BaseConsoleCommand
 
         $crudInfo->setFrontendPluginDirName(
             $this->askText('Frontend plugin directory name',
-                $this->validateNotEmpty('Value required'), StringHelper::slugify($crudInfo->getResourceSingularName() . 's'))
+                $this->validateNotEmpty('Value required'), StringHelper::slugify($crudInfo->getResourcePluralName()))
         );
 
         $pluginsDir = $projectRoot . '/assets/js/plugins';
