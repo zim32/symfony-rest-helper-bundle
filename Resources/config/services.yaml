@@ -10,5 +10,7 @@ services:
     tags: ['app.request_filter']
 
   Zim\Bundle\SymfonyRestHelperBundle\Serializer\ResourceDenormalizer:
+    parent: Symfony\Component\Serializer\Normalizer\ObjectNormalizer
+    autowire: false
     arguments: ['@doctrine.orm.default_entity_manager']
     tags: ['serializer.normalizer']

@@ -273,6 +273,12 @@ class BaseCrudController extends AbstractController
 
         $data = json_decode($request->getContent(), 1);
         $setup->changeSubmittedData($data, $request);
+
+        // remove id field if exists
+        if (array_key_exists('id', $data)) {
+            unset($data['id']);
+        }
+
         $entity = $this->denormalize($data, $itemClass, $entity, 'Post', $additionalGroups);
 
         // validate

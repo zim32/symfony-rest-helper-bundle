@@ -5,10 +5,16 @@ namespace Zim\Bundle\SymfonyRestHelperBundle\Serializer;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
+use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
+use Symfony\Component\Serializer\Mapping\ClassDiscriminatorResolverInterface;
+use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
+use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Zim\Bundle\SymfonyRestHelperBundle\Helper\StringHelper;
 
-class ResourceDenormalizer implements DenormalizerInterface
+class ResourceDenormalizer extends ObjectNormalizer implements DenormalizerInterface
 {
     const TYPE_SINGLE_ID = 0;
     const TYPE_ARRAY_OF_IDS = 1;
@@ -20,8 +26,27 @@ class ResourceDenormalizer implements DenormalizerInterface
      */
     private $em;
 
-    public function __construct(EntityManagerInterface $em)
+    public function __construct(
+        ClassMetadataFactoryInterface $classMetadataFactory = null,
+        NameConverterInterface $nameConverter = null,
+        PropertyAccessorInterface $propertyAccessor = null,
+        PropertyTypeExtractorInterface $propertyTypeExtractor = null,
+        ClassDiscriminatorResolverInterface $classDiscriminatorResolver = null,
+        callable $objectClassResolver = null,
+        array $defaultContext = [],
+        EntityManagerInterface $em
+    )
     {
+        parent::__construct(
+            $classMetadataFactory,
+            $nameConverter,
+            $propertyAccessor,
+            $propertyTypeExtractor,
+            $classDiscriminatorResolver,
+            $objectClassResolver,
+            $defaultContext
+        );
+
         $this->em = $em;
     }
 
@@ -31,7 +56,7 @@ class ResourceDenormalizer implements DenormalizerInterface
     public function denormalize($data, string $type, string $format = null, array $context = [])
     {
         $dataType = $this->detectDataType($data, $type);
-
+        
         if ($dataType === null) {
             throw new \Exception('Unsupported data type');
         }
@@ -45,7 +70,9 @@ class ResourceDenormalizer implements DenormalizerInterface
                 $query->setParameter('ids', $data);
                 return $query->getResult();
             case self::TYPE_SINGLE_OBJECT:
-                return $this->em->find($type, $data['id']);
+                $entity = $this->em->find($type, $data['id']);
+                $context[self::OBJECT_TO_POPULATE] = $entity;
+                return parent::denormalize($data, $type, $format, $context);
             default:
                 throw new \Exception('Can not denormalize value. Unsupported value type');
         }
