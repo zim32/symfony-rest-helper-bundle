@@ -309,6 +309,13 @@ class BaseCrudController extends AbstractController
             throw $e;
         }
 
+        /**
+         * We need to refresh entity here, because if some elements where removed from the middle of
+         * OneToMany or ManyToMany relation, collection array keys are preserved and after normalization
+         * we will have objects instead of arrays
+         */
+        $this->em->refresh($entity);
+
         $json = $this->normalize($itemClass, $entity, 'Show', $additionalGroups);
 
         return $this->successResponse($json);
