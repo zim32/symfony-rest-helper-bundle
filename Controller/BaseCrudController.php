@@ -5,6 +5,7 @@ namespace Zim\Bundle\SymfonyRestHelperBundle\Controller;
 use Doctrine\ORM\NoResultException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup\BaseDeleteItemSetup;
 use Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup\BaseGetItemSetup;
 use Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup\BaseGetItemsSetup;
@@ -199,8 +200,12 @@ class BaseCrudController extends AbstractController
         }
 
         $entity = new $itemClass();
-
         $data   = json_decode($request->getContent(), 1);
+
+        if (!$data) {
+            throw new BadRequestHttpException("Can not decode json data. Json error message: " . json_last_error_msg());
+        }
+
         $setup->changeSubmittedData($data, $request);
         $entity = $this->denormalize($data, $itemClass, $entity, 'Post', $additionalGroups);
 
@@ -272,6 +277,11 @@ class BaseCrudController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), 1);
+
+        if (!$data) {
+            throw new BadRequestHttpException("Can not decode json data. Json error message: " . json_last_error_msg());
+        }
+
         $setup->changeSubmittedData($data, $request);
 
         // remove id field if exists
