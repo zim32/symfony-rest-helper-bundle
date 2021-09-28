@@ -88,6 +88,12 @@ class ResourceDenormalizer extends ObjectNormalizer implements DenormalizerInter
         return $dataType !== null;
     }
 
+    public function supportsNormalization($data, string $format = null)
+    {
+        return false;
+    }
+
+
     protected function detectDataType($data, $format)
     {
         switch (true) {
