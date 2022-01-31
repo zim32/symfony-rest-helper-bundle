@@ -190,10 +190,11 @@ class BaseCrudController extends AbstractController
      * @param string $itemClass
      * @param BasePostItemSetup|null $setup
      * @param array $additionalGroups
+     * @param array $additionalShowGroups
      * @return JsonResponse
      * @throws \Exception
      */
-    protected function handlePostItemOperation(Request $request, string $itemClass, BasePostItemSetup $setup = null, array $additionalGroups = [])
+    protected function handlePostItemOperation(Request $request, string $itemClass, BasePostItemSetup $setup = null, array $additionalGroups = [], array $additionalShowGroups = [])
     {
         if (!$setup) {
             $setup = new BasePostItemSetup();
@@ -244,7 +245,7 @@ class BaseCrudController extends AbstractController
             throw $e;
         }
 
-        $json  = $this->normalize($itemClass, $entity, 'Show', $additionalGroups);
+        $json  = $this->normalize($itemClass, $entity, 'Show', $additionalShowGroups);
 
         return $this->successResponse($json);
     }
@@ -255,10 +256,11 @@ class BaseCrudController extends AbstractController
      * @param string $itemClass
      * @param BasePatchItemSetup|null $setup
      * @param array $additionalGroups
+     * @param array $additionalShowGroups
      * @return JsonResponse
      * @throws \Exception
      */
-    protected function handlePatchItemOperation(string $id, Request $request, string $itemClass, BasePatchItemSetup $setup = null, array $additionalGroups = [])
+    protected function handlePatchItemOperation(string $id, Request $request, string $itemClass, BasePatchItemSetup $setup = null, array $additionalGroups = [], array $additionalShowGroups = [])
     {
         if (!$setup) {
             $setup = new BasePatchItemSetup();
@@ -326,7 +328,7 @@ class BaseCrudController extends AbstractController
          */
         $this->em->refresh($entity);
 
-        $json = $this->normalize($itemClass, $entity, 'Show', $additionalGroups);
+        $json = $this->normalize($itemClass, $entity, 'Show', $additionalShowGroups);
 
         return $this->successResponse($json);
     }

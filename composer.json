@@ -13,9 +13,8 @@
     }
   ],
   "require": {
-    "php": ">=7.1",
-    "symfony/framework-bundle": "5.2.*",
-    "symfony/console": "5.2.*"
+    "symfony/framework-bundle": "5.4.*",
+    "symfony/console": "5.4.*"
   },
   "autoload": {
     "psr-4": {

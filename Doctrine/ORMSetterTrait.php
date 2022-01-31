@@ -14,8 +14,9 @@ trait ORMSetterTrait
      * @param string $propertyName Name of property that holds collection
      * @param callable $comparator First argument is submitted item, second argument is existing item
      * @param callable $factory First argument is submitted item
+     * @param callable|null $removeFromOwning First argument is existing item to be deleted (owning item)
      */
-    protected function handleOneToMany($data, string $propertyName, callable $comparator, callable $factory)
+    protected function handleOneToMany($data, string $propertyName, callable $comparator, callable $factory, ?callable $removeFromOwning = null)
     {
         if (!($data instanceof Collection)) {
             $data = new ArrayCollection($data);
@@ -26,7 +27,12 @@ trait ORMSetterTrait
             if (false === $data->exists(function($key, $val) use ($existing, $comparator) {
                     return $comparator($val, $existing);
                 })) {
+
                 $this->{$propertyName}->removeElement($existing);
+
+                if ($removeFromOwning) {
+                    $removeFromOwning($existing);
+                }
             }
         }
 

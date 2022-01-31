@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
@@ -63,7 +64,7 @@ class MakeCrudCommand extends BaseConsoleCommand
 
         $crudInfo->setResourcePluralName(
             $this->askText('Resource plural name: ',
-                $this->validateNotEmpty('Value required'))
+                $this->validateNotEmpty('Value required'), $crudInfo->getResourceSingularName().'s')
         );
 
         $crudInfo->setResourceTag(
@@ -464,9 +465,13 @@ EOL;
         /** @var QuestionHelper $questionHelper */
         $questionHelper = $this->getHelper('question');
 
-        $question = new ConfirmationQuestion($question);
+        $question = new ChoiceQuestion(
+            $question,
+            ['y', 'n'],
+            null
+        );
 
-        return $questionHelper->ask($this->input, $this->output, $question);
+        return $questionHelper->ask($this->input, $this->output, $question) === 'y';
     }
 
     protected function validateNotEmpty(string $message)

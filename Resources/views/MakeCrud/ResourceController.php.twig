@@ -9,13 +9,20 @@ use Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup\BaseGetItemSetup;
 use Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup\BaseGetItemsSetup;
 use Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup\BasePatchItemSetup;
 use Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup\BasePostItemSetup;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Annotations as OA;
+use Exception;
 
 class {{ info.resourceSingularName }}Resource extends ApiController
 {
+    const REQUIRED_GROUPS  = [
+        'list'  => [],
+        'show'  => [],
+        'post'  => [],
+        'patch' => []
+    ];
 
     /**
      * @Route(path="{{ info.getItemsOperationUrl }}", methods={"GET"}, name="{{ info.getItemsOperationRouteName }}")
@@ -44,13 +51,13 @@ class {{ info.resourceSingularName }}Resource extends ApiController
      * )
      * @param Request $request
      *
-     * @return JsonResponse
+     * @return Response
      */
-    public function {{ info.getItemsOperationMethodName }}(Request $request)
+    public function {{ info.getItemsOperationMethodName }}(Request $request): Response
     {
         return $this->handleGetItemsOperation($request, {{ info.entityShortName }}::class, new class extends BaseGetItemsSetup {
 
-        });
+        }, self::REQUIRED_GROUPS['list']);
     }
 
     /**
@@ -77,13 +84,14 @@ class {{ info.resourceSingularName }}Resource extends ApiController
      *
      * @param string $id
      * @param Request $request
-     * @return JsonResponse
+     * @return Response
+     * @throws Exception
      */
-    public function {{ info.getItemOperationMethodName }}(string $id, Request $request)
+    public function {{ info.getItemOperationMethodName }}(string $id, Request $request): Response
     {
         return $this->handleGetItemOperation($id, $request, {{ info.entityShortName }}::class, new class extends BaseGetItemSetup {
 
-        });
+        }, self::REQUIRED_GROUPS['show']);
     }
 
 
@@ -115,14 +123,14 @@ class {{ info.resourceSingularName }}Resource extends ApiController
      * )
      *
      * @param Request $request
-     *
-     * @return JsonResponse
+     * @return Response
+     * @throws Exception
      */
-    public function {{ info.postItemOperationMethodName }}(Request $request)
+    public function {{ info.postItemOperationMethodName }}(Request $request): Response
     {
         return $this->handlePostItemOperation($request, {{ info.entityShortName }}::class, new class extends BasePostItemSetup {
 
-        });
+        }, self::REQUIRED_GROUPS['post']);
     }
 
     /**
@@ -155,13 +163,14 @@ class {{ info.resourceSingularName }}Resource extends ApiController
      *
      * @param string $id
      * @param Request $request
-     * @return JsonResponse
+     * @return Response
+     * @throws Exception
      */
-    public function {{ info.patchItemOperationMethodName }}(string $id, Request $request)
+    public function {{ info.patchItemOperationMethodName }}(string $id, Request $request): Response
     {
         return $this->handlePatchItemOperation($id, $request, {{ info.entityShortName }}::class, new class extends BasePatchItemSetup {
 
-        });
+        }, self::REQUIRED_GROUPS['patch']);
     }
 
 
@@ -188,9 +197,10 @@ class {{ info.resourceSingularName }}Resource extends ApiController
     *
     * @param string $id
     * @param Request $request
-    * @return JsonResponse
+    * @return Response
+    * @throws Exception
     */
-    public function {{ info.deleteItemOperationMethodName }}(string $id, Request $request)
+    public function {{ info.deleteItemOperationMethodName }}(string $id, Request $request): Response
     {
         return $this->handleDeleteItemOperation($id, {{ info.entityShortName }}::class, $request, new class extends BaseDeleteItemSetup {
 
