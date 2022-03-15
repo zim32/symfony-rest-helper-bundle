@@ -4,7 +4,6 @@ namespace Zim\Bundle\SymfonyRestHelperBundle\Controller;
 
 use Doctrine\ORM\NoResultException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup\BaseDeleteItemSetup;
 use Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup\BaseGetItemSetup;
@@ -134,9 +133,15 @@ class BaseCrudController extends AbstractController
         }
 
         $pager = $this->processPagination($request, $qb, $getItemsSetup);
-        $items = $pager->getIterator()->getIterator()->getArrayCopy();
 
-        $json  = $this->normalize($itemClass, $items, 'List', $additionalGroups, $getItemsSetup->overrideGroup());
+        if ($getItemsSetup->hydrateArray()) {
+            $json = $pager->getIterator()->getQuery()->getArrayResult();
+        } else {
+            $items = $pager->getIterator()->getIterator()->getArrayCopy();
+            $json  = $this->normalize($itemClass, $items, 'List', $additionalGroups, $getItemsSetup->overrideGroup());
+        }
+
+        $getItemsSetup->modifyResponseItems($json);
 
         return $this->successResponse($json, [
             'pager'  => $this->formatPagerData($pager)

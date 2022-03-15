@@ -38,4 +38,14 @@ class BaseGetItemsSetup
     {
         return null;
     }
+
+    public function hydrateArray(): bool
+    {
+        return false;
+    }
+
+    public function modifyResponseItems(array &$data)
+    {
+
+    }
 }

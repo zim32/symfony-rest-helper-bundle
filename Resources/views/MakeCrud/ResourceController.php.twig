@@ -130,7 +130,7 @@ class {{ info.resourceSingularName }}Resource extends ApiController
     {
         return $this->handlePostItemOperation($request, {{ info.entityShortName }}::class, new class extends BasePostItemSetup {
 
-        }, self::REQUIRED_GROUPS['post']);
+        }, self::REQUIRED_GROUPS['post'], self::REQUIRED_GROUPS['show']);
     }
 
     /**
@@ -170,7 +170,7 @@ class {{ info.resourceSingularName }}Resource extends ApiController
     {
         return $this->handlePatchItemOperation($id, $request, {{ info.entityShortName }}::class, new class extends BasePatchItemSetup {
 
-        }, self::REQUIRED_GROUPS['patch']);
+        }, self::REQUIRED_GROUPS['patch'], self::REQUIRED_GROUPS['show']);
     }
 
 
