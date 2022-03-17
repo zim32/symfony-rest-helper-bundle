@@ -56,7 +56,7 @@ class ResourceDenormalizer extends ObjectNormalizer implements DenormalizerInter
     public function denormalize($data, string $type, string $format = null, array $context = [])
     {
         $dataType = $this->detectDataType($data, $type);
-        
+
         if ($dataType === null) {
             throw new \Exception('Unsupported data type');
         }
@@ -120,7 +120,12 @@ class ResourceDenormalizer extends ObjectNormalizer implements DenormalizerInter
             return false;
         }
 
-        $metadata = $this->em->getClassMetadata($type);
+        try {
+            $metadata = $this->em->getClassMetadata($type);
+        } catch (\Exception $e) {
+            return false;
+        }
+
 
         if (!$metadata) {
             return false;
