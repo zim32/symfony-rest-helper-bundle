@@ -164,7 +164,7 @@ class MakeCrudCommand extends BaseConsoleCommand
 
         $crudInfo->setPatchItemOperationResponseDescription(
             $this->askText('PatchItem response description',
-                $this->validateNotEmpty('Value required'), 'Patch ' . $this->generateDescriptionText($crudInfo->getResourceSingularName()) . ' resource')
+                $this->validateNotEmpty('Value required'), 'Modified ' . $this->generateDescriptionText($crudInfo->getResourceSingularName()) . ' resource')
         );
 
         $crudInfo->setPatchItemOperationFormType(
@@ -245,9 +245,86 @@ class MakeCrudCommand extends BaseConsoleCommand
             $input = new ArrayInput($arguments);
 
             $command->run($input, $this->output);
+            $this->tweakGeneratedEntity($filePath, $crudInfo);
 
             require_once $filePath;
         }
+    }
+
+    protected function tweakGeneratedEntity(string $filePath, MakeCrudInfo $crudInfo)
+    {
+        $content = file_get_contents($filePath);
+
+        $insertUseStatements = function(string $content, MakeCrudInfo $crudInfo)
+        {
+            $insertAfter = "namespace App\Entity;\n";
+
+            $newContent = <<<'EOT'
+            use OpenApi\Attributes as OA;
+            use Symfony\Component\Serializer\Annotation\Groups;
+            use Symfony\Component\Validator\Constraints as Assert;    
+            EOT;
+
+            $pos = strpos($content, $insertAfter);
+            $content = substr_replace($content, $newContent . PHP_EOL, $pos + strlen($insertAfter), 0);
+
+            return $content;
+        };
+
+        $insertSchemaAnnotationStatements = function(string $content, MakeCrudInfo $crudInfo)
+        {
+            $entityShortName = $crudInfo->getResourceSingularName();
+            $insertBefore = "class $entityShortName";
+
+            $newContent = <<<EOT
+            #[OA\Schema(x: ["fqcn"=>{$entityShortName}::class, "groups"=>[self::ListGroup, self::ShowGroup, self::PostGroup, self::EmbeddedGroup]])]
+            EOT;
+
+            $pos = strpos($content, $insertBefore);
+            $content = substr_replace($content, $newContent . PHP_EOL, $pos, 0);
+
+            return $content;
+        };
+
+        $insertSerializerGroupsConstants = function(string $content, MakeCrudInfo $crudInfo)
+        {
+            $entityShortName = $crudInfo->getResourceSingularName();
+            $insertAfter = "class $entityShortName\n{\n";
+
+            $newContent = <<<EOT
+                const ListGroup = '{$entityShortName}List';
+                const ShowGroup = '{$entityShortName}Show';
+                const PostGroup = '{$entityShortName}Post';
+                const EmbeddedGroup = '{$entityShortName}Embedded';
+            EOT;
+
+            $pos = strpos($content, $insertAfter);
+            $content = substr_replace($content, $newContent . str_repeat(PHP_EOL, 2), $pos + strlen($insertAfter), 0);
+
+            return $content;
+        };
+
+        $insertMetaInfoToIdProperty = function(string $content, MakeCrudInfo $crudInfo)
+        {
+            $insertBefore = 'private $id;';
+
+            $newContent = <<<'EOT'
+            #[OA\Property(type: "integer")]
+                #[Groups([self::ListGroup, self::ShowGroup, self::EmbeddedGroup])]
+            EOT;
+
+            $pos = strpos($content, $insertBefore);
+            $content = substr_replace($content, $newContent . PHP_EOL . '    ', $pos, 0);
+
+            return $content;
+        };
+
+        $content = $insertUseStatements($content, $crudInfo);
+        $content = $insertSchemaAnnotationStatements($content, $crudInfo);
+        $content = $insertSerializerGroupsConstants($content, $crudInfo);
+        $content  = $insertMetaInfoToIdProperty($content, $crudInfo);
+
+        file_put_contents($filePath, $content);
     }
 
     protected function generateForm(MakeCrudInfo $crudInfo)

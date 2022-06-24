@@ -4,20 +4,21 @@ namespace Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup;
 
 
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 class BasePatchItemSetup
 {
 
-    public function changeSubmittedData(array &$data, Request $request)
+    public function changeSubmittedData(array &$data, Request $request, AuthorizationCheckerInterface $authorizationChecker)
     {
     }
 
-    public function beforeFlush($entity, Request $request)
+    public function beforeFlush($entity, Request $request, AuthorizationCheckerInterface $authorizationChecker)
     {
 
     }
 
-    public function afterFlush($entity, Request $request)
+    public function afterFlush($entity, Request $request, AuthorizationCheckerInterface $authorizationChecker)
     {
 
     }

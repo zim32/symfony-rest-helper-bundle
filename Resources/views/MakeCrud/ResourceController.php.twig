@@ -9,188 +9,184 @@ use Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup\BaseGetItemSetup;
 use Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup\BaseGetItemsSetup;
 use Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup\BasePatchItemSetup;
 use Zim\Bundle\SymfonyRestHelperBundle\Controller\Setup\BasePostItemSetup;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OA;
 
 class {{ info.resourceSingularName }}Resource extends ApiController
 {
-
-    /**
-     * @Route(path="{{ info.getItemsOperationUrl }}", methods={"GET"}, name="{{ info.getItemsOperationRouteName }}")
-     *
-     * @OA\Get(
-     *     path="{{ info.getItemsOperationUrl }}",
-     *     operationId="{{ info.getItemsOperationMethodName }}",
-     *     @OA\Parameter(in="query", name="currentPage",  schema={"type"="integer", "example"=1}),
-     *     @OA\Parameter(in="query", name="itemsPerPage", schema={"type"="integer", "example"=10}),
-     *     @OA\Parameter(in="query", name="sortBy", schema={"type"="string", "default"="id"}),
-     *     @OA\Parameter(in="query", name="sortOrder", schema={"type"="string", "default"="asc"}),
-     *     @OA\Parameter(in="query", name="filter", schema={"type"="object" }, style="deepObject", explode=true),
-     *     @OA\Response(
-     *         response="200",
-     *         description="{{ info.getItemsOperationResponseDescription }}",
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                  type="object",
-     *                  @OA\Property(property="status", type="string", enum={"ok", "error"}),
-     *                  @OA\Property(property="result", type="array", items=@OA\Items(ref="#/components/schemas/{{ info.resourceSingularName }}List"))
-     *             )
-     *         )
-     *     ),
-     *     tags={"{{ info.resourceTag }}"}
-     * )
-     * @param Request $request
-     *
-     * @return JsonResponse
-     */
-    public function {{ info.getItemsOperationMethodName }}(Request $request)
+    const REQUIRED_GROUPS  = [
+        'list'  => [],
+        'show'  => [],
+        'post'  => [],
+        'patch' => []
+    ];
+    
+    #[Route(path: "{{ info.getItemsOperationUrl }}", methods: ["GET"], name: "{{ info.getItemsOperationRouteName }}")]
+    #[OA\Get(
+        path: "{{ info.getItemsOperationUrl }}", 
+        operationId: "{{ info.getItemsOperationMethodName }}",
+        parameters: [
+            new OA\Parameter(in: "query", name: "currentPage", schema: new OA\Schema(type: "integer", example: 1)),
+            new OA\Parameter(in: "query", name: "itemsPerPage", schema: new OA\Schema(type: "integer", example: 10)),
+            new OA\Parameter(in: "query", name: "sortBy", schema: new OA\Schema(type: "string", default: "id")),
+            new OA\Parameter(in: "query", name: "sortOrder", schema: new OA\Schema(type: "string", default: "asc")),
+            new OA\Parameter(in: "query", name: "filter", schema: new OA\Schema(type: "object"), style: "deepObject", explode: true)
+        ],
+        responses: [
+            new OA\Response(
+                response: 200, 
+                description: "{{ info.getItemsOperationResponseDescription }}", 
+                content: new OA\MediaType(
+                    mediaType: "application/json",
+                    schema: new OA\Schema(
+                        type: "object",
+                        properties: [
+                            new OA\Property(property: "status", type: "string", enum: ["ok", "error"]),
+                            new OA\Property(property: "result", type: "array", items: new OA\Items(ref: "#/components/schemas/{{ info.resourceSingularName }}List"))
+                        ]
+                    )
+                )
+            )
+        ],
+        tags: ["{{ info.resourceTag }}"]
+    )]
+    public function {{ info.getItemsOperationMethodName }}(Request $request): Response
     {
         return $this->handleGetItemsOperation($request, {{ info.entityShortName }}::class, new class extends BaseGetItemsSetup {
 
-        });
+        }, self::REQUIRED_GROUPS['list']);
     }
 
-    /**
-     * @Route(path="{{ info.getItemsOperationUrl }}/{id}", name="{{ info.getItemOperationRouteName }}", methods={"GET"})
-     *
-     * @OA\Get(
-     *     path="{{ info.getItemsOperationUrl }}/{id}",
-     *     operationId="{{ info.getItemOperationMethodName }}",
-     *     @OA\Parameter(in="path", name="id", schema={"type"="integer"}, required=true),
-     *     @OA\Response(
-     *         response="200",
-     *         description="{{ info.getItemOperationResponseDescription }}",
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                  type="object",
-     *                  @OA\Property(property="status", type="string", enum={"ok", "error"}),
-     *                  @OA\Property(property="result", ref="#/components/schemas/{{ info.resourceSingularName }}Show")
-     *             )
-     *         )
-     *     ),
-     *     tags={"{{ info.resourceTag }}"}
-     * )
-     *
-     * @param string $id
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function {{ info.getItemOperationMethodName }}(string $id, Request $request)
+    
+    #[Route(path: "{{ info.getItemsOperationUrl }}/{id}", methods: ["GET"], name: "{{ info.getItemOperationRouteName }}", requirements: ["id"=>"\d+"])]
+    #[OA\Get(
+        path: "{{ info.getItemsOperationUrl }}/{id}", 
+        operationId: "{{ info.getItemOperationMethodName }}", 
+        parameters: [
+            new OA\Parameter(in: "path", name: "id", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200, 
+                description: "{{ info.getItemOperationResponseDescription }}", 
+                content: new OA\MediaType(
+                    mediaType: "application/json",
+                    schema: new OA\Schema(
+                        type: "object",
+                        properties: [
+                            new OA\Property(property: "status", type: "string", enum: ["ok", "error"]),
+                            new OA\Property(property: "result", ref: "#/components/schemas/{{ info.resourceSingularName }}Show")
+                        ]
+                    )
+                )
+            )
+        ],
+        tags: ["{{ info.resourceTag }}"]
+    )]
+    public function {{ info.getItemOperationMethodName }}(string $id, Request $request): Response
     {
         return $this->handleGetItemOperation($id, $request, {{ info.entityShortName }}::class, new class extends BaseGetItemSetup {
 
-        });
+        }, self::REQUIRED_GROUPS['show']);
     }
 
 
-    /**
-     * @Route(path="{{ info.getItemsOperationUrl }}", name="{{ info.postItemOperationRouteName }}", methods={"POST"})
-     *
-     * @OA\Post(
-     *     path="{{ info.getItemsOperationUrl }}",
-     *     operationId="{{ info.postItemOperationMethodName }}",
-     *     @OA\RequestBody(
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(ref="#/components/schemas/{{ info.resourceSingularName }}Post")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response="200",
-     *         description="{{ info.postItemOperationResponseDescription }}",
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                  type="object",
-     *                  @OA\Property(property="status", type="string", enum={"ok", "error"}),
-     *                  @OA\Property(property="result", ref="#/components/schemas/{{ info.resourceSingularName }}Show")
-     *             )
-     *         )
-     *     ),
-     *     tags={"{{ info.resourceTag }}"}
-     * )
-     *
-     * @param Request $request
-     *
-     * @return JsonResponse
-     */
-    public function {{ info.postItemOperationMethodName }}(Request $request)
+    #[Route(path: "{{ info.getItemsOperationUrl }}", methods: ["POST"], name: "{{ info.postItemOperationRouteName }}")]
+    #[OA\Post(
+        path: "{{ info.getItemsOperationUrl }}", 
+        operationId: "{{ info.postItemOperationMethodName }}",
+        requestBody: new OA\RequestBody(
+            content: new OA\JsonContent(ref: "#/components/schemas/{{ info.resourceSingularName }}Post")
+        ),
+        responses: [
+            new OA\Response(
+                response: 200, 
+                description: "{{ info.postItemOperationResponseDescription }}", 
+                content: new OA\MediaType(
+                    mediaType: "application/json",
+                    schema: new OA\Schema(
+                        type: "object",
+                        properties: [
+                            new OA\Property(property: "status", type: "string", enum: ["ok", "error"]),
+                            new OA\Property(property: "result", ref: "#/components/schemas/{{ info.resourceSingularName }}Show")
+                        ]
+                    )
+                )
+            )
+        ],
+        tags: ["{{ info.resourceTag }}"]
+    )]
+    public function {{ info.postItemOperationMethodName }}(Request $request): Response
     {
         return $this->handlePostItemOperation($request, {{ info.entityShortName }}::class, new class extends BasePostItemSetup {
 
-        });
+        }, self::REQUIRED_GROUPS['post'], self::REQUIRED_GROUPS['show']);
     }
 
-    /**
-     * @Route(path="{{ info.getItemsOperationUrl }}/{id}", name="{{ info.patchItemOperationRouteName }}", methods={"PATCH"})
-     *
-     * @OA\Patch(
-     *     path="{{ info.getItemsOperationUrl }}/{id}",
-     *     operationId="{{ info.patchItemOperationMethodName }}",
-     *     @OA\Parameter(in="path", name="id", schema={"type"="integer"}, required=true),
-     *     @OA\RequestBody(
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(ref="#/components/schemas/{{ info.resourceSingularName }}Post")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response="200",
-     *         description="{{ info.patchItemOperationResponseDescription }}",
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                  type="object",
-     *                  @OA\Property(property="status", type="string", enum={"ok", "error"}),
-     *                  @OA\Property(property="result", ref="#/components/schemas/{{ info.resourceSingularName }}Show")
-     *             )
-     *         )
-     *     ),
-     *     tags={"{{ info.resourceTag }}"}
-     * )
-     *
-     * @param string $id
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function {{ info.patchItemOperationMethodName }}(string $id, Request $request)
+    
+    #[Route(path: "{{ info.getItemsOperationUrl }}/{id}", methods: ["PATCH"], name: "{{ info.patchItemOperationRouteName }}", requirements: ["id"=>"\d+"])]
+    #[OA\Patch(
+        path: "{{ info.getItemsOperationUrl }}/{id}", 
+        operationId: "{{ info.patchItemOperationMethodName }}", 
+        parameters: [
+            new OA\Parameter(in: "path", name: "id", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        requestBody: new OA\RequestBody(
+            content: new OA\JsonContent(ref: "#/components/schemas/{{ info.resourceSingularName }}Post")
+        ),
+        responses: [
+            new OA\Response(
+                response: 200, 
+                description: "{{ info.patchItemOperationResponseDescription }}", 
+                content: new OA\MediaType(
+                    mediaType: "application/json",
+                    schema: new OA\Schema(
+                        type: "object",
+                        properties: [
+                            new OA\Property(property: "status", type: "string", enum: ["ok", "error"]),
+                            new OA\Property(property: "result", ref: "#/components/schemas/{{ info.resourceSingularName }}Show")
+                        ]
+                    )
+                )
+            )
+        ],     
+        tags: ["{{ info.resourceTag }}"]
+    )]
+    public function {{ info.patchItemOperationMethodName }}(string $id, Request $request): Response
     {
         return $this->handlePatchItemOperation($id, $request, {{ info.entityShortName }}::class, new class extends BasePatchItemSetup {
 
-        });
+        }, self::REQUIRED_GROUPS['patch'], self::REQUIRED_GROUPS['show']);
     }
 
 
-    /**
-    * @Route(path="{{ info.getItemsOperationUrl }}/{id}", name="{{ info.deleteItemOperationRouteName }}", methods={"DELETE"})
-    *
-    * @OA\Delete(
-    *     path="{{ info.getItemsOperationUrl }}/{id}",
-    *     operationId="{{ info.deleteItemOperationMethodName }}",
-    *     @OA\Parameter(in="path", name="id", schema={"type"="integer"}, required=true),
-    *     @OA\Response(
-    *         response="200",
-    *         description="{{ info.deleteItemOperationResponseDescription }}",
-    *         @OA\MediaType(
-    *             mediaType="application/json",
-    *             @OA\Schema(
-    *                  type="object",
-    *                  @OA\Property(property="status", type="string", enum={"ok", "error"})
-    *             )
-    *         )
-    *     ),
-    *     tags={"{{ info.resourceTag }}"}
-    * )
-    *
-    * @param string $id
-    * @param Request $request
-    * @return JsonResponse
-    */
-    public function {{ info.deleteItemOperationMethodName }}(string $id, Request $request)
+    #[Route(path: "{{ info.getItemsOperationUrl }}/{id}", methods: ["DELETE"], name: "{{ info.deleteItemOperationRouteName }}", requirements: ["id"=>"\d+"])]
+    #[OA\Delete(
+        path: "{{ info.getItemsOperationUrl }}/{id}", 
+        operationId: "{{ info.deleteItemOperationMethodName }}", 
+        parameters: [
+            new OA\Parameter(in: "path", name: "id", required: true, schema: new OA\Schema(type: "integer"))
+        ],
+        responses: [
+            new OA\Response(
+                response: 200, 
+                description: "{{ info.deleteItemOperationResponseDescription }}", 
+                content: new OA\MediaType(
+                    mediaType: "application/json",
+                    schema: new OA\Schema(
+                        type: "object",
+                        properties: [
+                            new OA\Property(property: "status", type: "string", enum: ["ok", "error"])
+                        ]
+                    )
+                )
+            )
+        ],
+        tags: ["{{ info.resourceTag }}"]
+    )]
+    public function {{ info.deleteItemOperationMethodName }}(string $id, Request $request): Response
     {
         return $this->handleDeleteItemOperation($id, {{ info.entityShortName }}::class, $request, new class extends BaseDeleteItemSetup {
 

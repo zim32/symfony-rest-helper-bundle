@@ -72,11 +72,19 @@ class GroupSchemesProcessor
                         }
 
                         $groups = $propMetadata->getGroups();
+                        $include = false;
 
-                        if (
-                            (!$groups || in_array($group, $groups)) &&
-                            (!$propXGroups || in_array($group, $propXGroups))
-                        ) {
+                        if (!$propXGroups && !$groups) {
+                            $include = true;
+                        }
+                        
+                        if ($propXGroups && in_array($group, $propXGroups)) {
+                            $include = true;
+                        } else if (!$propXGroups && $groups && in_array($group, $groups)) {
+                            $include = true;
+                        }
+
+                        if ($include) {
                             $newProp = clone $property;
                             $newProps[] = $newProp;
                         }

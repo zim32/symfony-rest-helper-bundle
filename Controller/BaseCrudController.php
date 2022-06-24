@@ -20,6 +20,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Serializer\Exception\CircularReferenceException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
@@ -62,13 +63,19 @@ class BaseCrudController extends AbstractController
      */
     protected $requestFilter;
 
+    /**
+     * @var AuthorizationCheckerInterface
+     */
+    protected $authorizationChecker;
+
     public function __construct(
         RouterInterface $router,
         EntityManagerInterface $em,
         NormalizerInterface $normalizer,
         DenormalizerInterface $denormalizer,
         ValidatorInterface $validator,
-        RequestFilterService $requestFilter
+        RequestFilterService $requestFilter,
+        AuthorizationCheckerInterface $authorizationChecker,
     )
     {
         $this->router        = $router;
@@ -77,6 +84,7 @@ class BaseCrudController extends AbstractController
         $this->denormalizer  = $denormalizer;
         $this->validator     = $validator;
         $this->requestFilter = $requestFilter;
+        $this->authorizationChecker = $authorizationChecker;
     }
 
     /**
@@ -114,7 +122,7 @@ class BaseCrudController extends AbstractController
             $this->denyAccessUnlessGranted($requiredRole);
         }
 
-        $getItemsSetup->modifyQueryBuilder($qb, $request);
+        $getItemsSetup->modifyQueryBuilder($qb, $request, $this->authorizationChecker);
 
         $this->processFiltering($request, $qb, $getItemsSetup);
         $this->processSorting($request, $qb);
@@ -125,7 +133,9 @@ class BaseCrudController extends AbstractController
             $data = $qb->getQuery()->getArrayResult();
 
             // convert id to string, to be consistent
-            $data = array_map(function($item) { $item['id'] = (string)$item['id']; return $item; }, $data);
+            $data = array_map(function($item) use ($getItemsSetup, $request) { 
+                return array_intersect_key($item, array_flip($getItemsSetup->getArrayResultFields($request, $this->authorizationChecker)));
+            }, $data);
 
             return new JsonResponse([
                 'status' => 'ok',
@@ -164,7 +174,7 @@ class BaseCrudController extends AbstractController
         $qb->andWhere('m.id = :id');
         $qb->setParameter('id', $id);
 
-        $setup->modifyQueryBuilder($qb, $request);
+        $setup->modifyQueryBuilder($qb, $request, $this->authorizationChecker);
 
         try {
             $entity = $qb->getQuery()->getSingleResult();
@@ -193,7 +203,7 @@ class BaseCrudController extends AbstractController
      * @return JsonResponse
      * @throws \Exception
      */
-    protected function handlePostItemOperation(Request $request, string $itemClass, BasePostItemSetup $setup = null, array $additionalGroups = [])
+    protected function handlePostItemOperation(Request $request, string $itemClass, BasePostItemSetup $setup = null, array $additionalPostGroups = [], array $additionalShowGroups = [])
     {
         if (!$setup) {
             $setup = new BasePostItemSetup();
@@ -206,8 +216,8 @@ class BaseCrudController extends AbstractController
             throw new BadRequestHttpException("Can not decode json data. Json error message: " . json_last_error_msg());
         }
 
-        $setup->changeSubmittedData($data, $request);
-        $entity = $this->denormalize($data, $itemClass, $entity, 'Post', $additionalGroups);
+        $setup->changeSubmittedData($data, $request, $this->authorizationChecker);
+        $entity = $this->denormalize($data, $itemClass, $entity, 'Post', $additionalPostGroups);
 
         // validate
         $errors = $this->validator->validate($entity);
@@ -227,12 +237,12 @@ class BaseCrudController extends AbstractController
         try {
             $conn->beginTransaction();
 
-            $setup->beforeFlush($entity, $request);
+            $setup->beforeFlush($entity, $request, $this->authorizationChecker);
 
             $this->em->persist($entity);
             $this->em->flush();
 
-            $setup->afterFlush($entity, $request);
+            $setup->afterFlush($entity, $request, $this->authorizationChecker);
 
             $conn->commit();
         } catch (\Exception $e) {
@@ -244,7 +254,7 @@ class BaseCrudController extends AbstractController
             throw $e;
         }
 
-        $json  = $this->normalize($itemClass, $entity, 'Show', $additionalGroups);
+        $json  = $this->normalize($itemClass, $entity, 'Show', $additionalShowGroups);
 
         return $this->successResponse($json);
     }
@@ -258,7 +268,7 @@ class BaseCrudController extends AbstractController
      * @return JsonResponse
      * @throws \Exception
      */
-    protected function handlePatchItemOperation(string $id, Request $request, string $itemClass, BasePatchItemSetup $setup = null, array $additionalGroups = [])
+    protected function handlePatchItemOperation(string $id, Request $request, string $itemClass, BasePatchItemSetup $setup = null, array $additionalPostGroups = [], array $additionalShowGroups = [])
     {
         if (!$setup) {
             $setup = new BasePatchItemSetup();
@@ -282,14 +292,14 @@ class BaseCrudController extends AbstractController
             throw new BadRequestHttpException("Can not decode json data. Json error message: " . json_last_error_msg());
         }
 
-        $setup->changeSubmittedData($data, $request);
+        $setup->changeSubmittedData($data, $request, $this->authorizationChecker);
 
         // remove id field if exists
         if (array_key_exists('id', $data)) {
             unset($data['id']);
         }
 
-        $entity = $this->denormalize($data, $itemClass, $entity, 'Post', $additionalGroups);
+        $entity = $this->denormalize($data, $itemClass, $entity, 'Post', $additionalPostGroups);
 
         // validate
         $errors = $this->validator->validate($entity);
@@ -303,11 +313,11 @@ class BaseCrudController extends AbstractController
         try {
             $conn->beginTransaction();
 
-            $setup->beforeFlush($entity, $request);
+            $setup->beforeFlush($entity, $request, $this->authorizationChecker);
 
             $this->em->flush();
 
-            $setup->afterFlush($entity, $request);
+            $setup->afterFlush($entity, $request, $this->authorizationChecker);
 
             $conn->commit();
         } catch (\Exception $e) {
@@ -326,7 +336,7 @@ class BaseCrudController extends AbstractController
          */
         $this->em->refresh($entity);
 
-        $json = $this->normalize($itemClass, $entity, 'Show', $additionalGroups);
+        $json = $this->normalize($itemClass, $entity, 'Show', $additionalShowGroups);
 
         return $this->successResponse($json);
     }
@@ -362,12 +372,12 @@ class BaseCrudController extends AbstractController
         try {
             $conn->beginTransaction();
 
-            $setup->beforeFlush($entity, $request);
+            $setup->beforeFlush($entity, $request, $this->authorizationChecker);
 
             $this->em->remove($entity);
             $this->em->flush();
 
-            $setup->afterFlush($entity, $request);
+            $setup->afterFlush($entity, $request, $this->authorizationChecker);
 
             $conn->commit();
         } catch (\Exception $e) {
