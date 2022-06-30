@@ -10,10 +10,11 @@ trait ORMSetterTrait
     /**
      * @param mixed $data Submitted data (Converted by serialized into doctrine entities)
      * @param string $propertyName Inverse property name
-     * @param string $propertyName Owning property name
+     * @param string $owningPropertyName Owning property name
      * @param callable $comparator First argument is submitted item, second argument is existing item
+     * @param boolean $orphanRemoval Pass true, if you use orphanRemoval. Passing true, prevents calling setter on owning side
      */
-    protected function handleOneToMany($data, string $propertyName, string $owningPropertyName, callable $comparator)
+    protected function handleOneToMany($data, string $propertyName, string $owningPropertyName, callable $comparator, bool $orphanRemoval = false)
     {
         if (!($data instanceof Collection)) {
             $data = new ArrayCollection($data);
@@ -26,7 +27,9 @@ trait ORMSetterTrait
                 })) {
                 $this->{$propertyName}->removeElement($existing);
                 $owningSetter = 'set' . ucfirst($owningPropertyName);
-                $existing->$owningSetter(null);
+                if (!$orphanRemoval) {
+                    $existing->$owningSetter(null);
+                }
             }
         }
 
